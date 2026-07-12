@@ -128,7 +128,8 @@ static void emit(int fd, int type, int code, int val) {
     struct input_event ev = {0};
     ev.type = type; ev.code = code; ev.value = val;
     // zaman damgasi kernel tarafindan doldurulur (0 birakmak guvenli)
-    write(fd, &ev, sizeof(ev));
+    ssize_t n = write(fd, &ev, sizeof(ev));
+    (void)n;   // uinput'a yazma hatasi tek event icin kritik degil
 }
 
 static int setup_uinput(void) {
@@ -276,11 +277,19 @@ int main(int argc, char **argv) {
                 int down = f[4] & 0x01;
                 off += FRAME_LEN;
 
-                // ham telefon konumu (0..AXIS_MAX) -> 0..1 normalize
-                double nx = (double)rawx / AXIS_MAX;
-                double ny = (double)rawy / AXIS_MAX;
+                // Area mapping ARTIK ANDROID APP'INDE yapiliyor: gelen x/y
+                // zaten secili area icinde 0..AXIS_MAX'e normalize edilmis.
+                // Daemon passthrough calisir. (area.conf sadece eski/deneysel
+                // Linux GUI icin durur; varsayilan tam-ekran = kimlik esleme.)
                 int x, y;
-                map_point(nx, ny, &x, &y);   // tablet area + aspect uygula
+                if (cfg.ax0 == 0.0 && cfg.ay0 == 0.0 &&
+                    cfg.ax1 == 1.0 && cfg.ay1 == 1.0 && !cfg.keep_aspect) {
+                    x = rawx; y = rawy;              // passthrough (varsayilan)
+                } else {
+                    double nx = (double)rawx / AXIS_MAX;
+                    double ny = (double)rawy / AXIS_MAX;
+                    map_point(nx, ny, &x, &y);       // deneysel: ek esleme
+                }
 
                 // Kalem her zaman "menzilde" (hover dahil) — cursor surekli hareket etsin
                 emit(uifd, EV_KEY, BTN_TOOL_PEN, 1);

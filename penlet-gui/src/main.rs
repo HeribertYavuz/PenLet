@@ -1,3 +1,13 @@
+// penlet-gui — DENEYSEL / EXPERIMENTAL
+//
+// UYARI: Area secimi artik ANDROID UYGULAMASINDA yapiliyor (onerilen yol).
+// Bu Linux GUI'si deneysel olarak korunuyor; udev izinleri ve SIGHUP
+// gerektirdigi icin kurulumu daha zahmetli.
+//
+// WARNING: Area selection now lives in the ANDROID APP (recommended).
+// This Linux GUI is kept as experimental; it needs udev permissions and
+// SIGHUP signaling, making setup more involved.
+//
 // penlet-gui: penlet tablet area editoru
 //
 // Telefon ekranini temsil eden bir dikdortgen gosterir. Icinde fareyle
@@ -93,7 +103,15 @@ impl App {
                             if rc == 0 {
                                 self.status = format!("Kaydedildi + daemon guncellendi (pid {}).", pid);
                             } else {
-                                self.status = format!("Kaydedildi ama daemon'a sinyal gitmedi (pid {}? calisiyor mu?).", pid);
+                                // En yaygin sebep: daemon root (sudo) ile calisiyor,
+                                // GUI normal kullanici -> sinyal gonderemez.
+                                self.status = format!(
+                                    "Kaydedildi, ama daemon'a sinyal gonderilemedi (pid {}).\n\
+                                     Muhtemel sebep: daemon 'sudo' ile calisiyor.\n\
+                                     Cozum: ./scripts/setup-permissions.sh calistir, cikis/giris yap,\n\
+                                     sonra daemon'i root'suz baslat. (Ya da daemon'i yeniden baslat.)",
+                                    pid
+                                );
                             }
                         } else {
                             self.status = "Kaydedildi. (pid dosyasi okunamadi)".into();
@@ -117,6 +135,10 @@ impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("penlet — Tablet Area");
+            ui.colored_label(
+                egui::Color32::from_rgb(230, 170, 60),
+                "DENEYSEL — area secimi artik Android uygulamasinda yapiliyor.",
+            );
             ui.label("Asagidaki dikdortgen telefon ekranidir. Fareyle icinde yeni bir area ciz (surukle).");
             ui.add_space(6.0);
 
@@ -129,7 +151,7 @@ impl eframe::App for App {
             let painter = ui.painter_at(rect);
             // telefon zemini
             painter.rect_filled(rect, 4.0, egui::Color32::from_gray(30));
-            painter.rect_stroke(rect, 4.0, egui::Stroke::new(1.0, egui::Color32::from_gray(90)));
+            painter.rect_stroke(rect, 4.0, egui::Stroke::new(1.0_f32, egui::Color32::from_gray(90)));
 
             // norm <-> ekran donusumleri
             let to_screen = |nx: f32, ny: f32| egui::pos2(
@@ -151,7 +173,7 @@ impl eframe::App for App {
                         self.area = Area { x0: sx, y0: sy, x1: cx, y1: cy };
                     }
                 }
-                if resp.drag_released() { self.drag_start = None; }
+                if resp.drag_stopped() { self.drag_start = None; }
             }
 
             // secili area'yi ciz
@@ -159,7 +181,7 @@ impl eframe::App for App {
             let a1 = to_screen(self.area.x0.max(self.area.x1), self.area.y0.max(self.area.y1));
             let arect = egui::Rect::from_min_max(a0, a1);
             painter.rect_filled(arect, 2.0, egui::Color32::from_rgba_unmultiplied(80, 160, 255, 60));
-            painter.rect_stroke(arect, 2.0, egui::Stroke::new(2.0, egui::Color32::from_rgb(80, 160, 255)));
+            painter.rect_stroke(arect, 2.0, egui::Stroke::new(2.0_f32, egui::Color32::from_rgb(80, 160, 255)));
 
             ui.add_space(10.0);
 

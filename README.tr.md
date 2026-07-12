@@ -28,9 +28,9 @@ Diğer platformlara port etmek projenin kapsamı dışındadır.
 
 | Klasör        | Görevi |
 |---------------|--------|
-| `android/`    | penlet uygulaması — S Pen `MotionEvent` (dokunma + hover) yakalar, 5 baytlık çerçeve gönderir |
-| `daemon/`     | `penlet.c` — çerçeveleri alır, `uinput` mutlak tablet oluşturur, area eşlemesi uygular |
-| `penlet-gui/` | Rust/egui area editörü — fareyle area çiz, kaydet, canlı uygula |
+| `android/`    | penlet uygulaması — area editörü + S Pen `MotionEvent` (dokunma + hover) yakalar, 5 baytlık çerçeve gönderir |
+| `daemon/`     | `penlet.c` — çerçeveleri alır, `uinput` mutlak tablet oluşturur (passthrough) |
+| `penlet-gui/` | *(deneysel)* Linux tarafı Rust/egui area editörü — yerini uygulama içi editör aldı |
 | `scripts/`    | `run.sh` (başlat), `verify.sh` (tablet olarak tanınıyor mu?) |
 
 ## Protokol
@@ -83,7 +83,33 @@ chmod +x scripts/run.sh scripts/verify.sh android/gradlew
 > **Bu adım zorunludur.** Yapılmazsa scriptler çalışmaz.
 > Git ile klonladığınızda çalıştırma biti korunur; bu adım yalnızca arşivler için gereklidir.
 
-### 2. Android uygulamasını derleyin ve kurun
+### 2. İzinleri ayarlayın (opsiyonel — yalnızca deneysel Linux GUI için)
+
+```sh
+./scripts/setup-permissions.sh
+```
+
+**Bu adımı atlayabilirsiniz.** Yalnızca deneysel Linux area GUI'sini kullanmak
+isterseniz gereklidir. `/dev/uinput` erişimi veren bir udev kuralı kurar; böylece
+daemon root yerine **normal kullanıcınız** olarak çalışır.
+
+> **Neden önemli:** daemon `sudo` ile çalışırsa, normal kullanıcı olarak çalışan
+> GUI ona `SIGHUP` gönderemez — normal bir kullanıcı, root'a ait bir sürece sinyal
+> yollayamaz. Canlı area yenileme sessizce çalışmaz. Ayrıca yetkisiz çalıştırmak
+> güvenlik açısından da doğru olandır.
+
+Sonrasında **çıkış yapıp tekrar giriş yapın** (ya da `newgrp uinput` çalıştırın)
+ki grup değişikliği etkili olsun. Doğrulama:
+
+```sh
+groups              # 'uinput' listede olmalı
+ls -l /dev/uinput   # grup: uinput, mod: crw-rw----
+```
+
+Bu adım yapılmazsa penlet yine çalışır, ancak `run.sh` `sudo`'ya düşer ve GUI'nin
+canlı yenileme özelliği devre dışı kalır.
+
+### 3. Android uygulamasını derleyin ve kurun
 
 Android Studio'da `android/` klasörünü açın ve **Run**'a basın.
 Cihazda USB hata ayıklama açık olmalıdır.
@@ -91,7 +117,7 @@ Cihazda USB hata ayıklama açık olmalıdır.
 Manifest'te `INTERNET` izni zaten tanımlı — Android bunu loopback bağlantıları
 için bile şart koşuyor.
 
-### 3. Daemon'ı başlatın
+### 4. Daemon'ı başlatın
 
 ```sh
 ./scripts/run.sh
@@ -101,28 +127,59 @@ Bu komut `uinput`'u yükler, `adb reverse` tünelini kurar, gerekirse daemon'ı
 derler ve başlatır. Ardından cihazda **penlet** uygulamasını açın — bağlantının
 kurulduğunu bildirmelidir.
 
-## Tablet alanı (GUI)
+## Tablet alanı — uygulama içinde ayarlanır
 
-```sh
-cd penlet-gui
-cargo build --release
-./target/release/penlet-gui ../daemon/area.conf
-```
+Area seçimi **tamamen Android uygulamasında** yapılır. İzin yok, root yok, sinyal
+yok — alanı kalemle, elinizin zaten bulunduğu yerde çizersiniz.
 
-- Dikdörtgen içinde sürükleyerek aktif alanı belirleyin
-- Hazır ayarlar: **Tüm ekran** / **Orta %60**
-- **Aspect koru (4:3)** — daireler ezik görünüyorsa işaretleyin
-- **KAYDET & UYGULA** — `area.conf`'a yazar ve daemon'a `SIGHUP` gönderir
+Uygulamanın tek bir düğmeyle geçilen iki modu vardır:
 
-Daemon yapılandırmayı **canlı** yeniden okur; osu!'yu kapatmanıza gerek yoktur.
+| Mod | Davranış |
+|-----|----------|
+| **AYAR (SETUP)** | Alanı ayarlarsınız. Girdi PC'ye **gitmez.** Parmak da kalem de çalışır. |
+| **AKTİF (ACTIVE)** | Alan kilitlenir. Yalnızca **alan içindeki** S Pen girdisi gönderilir. Panel gizlenir (temiz ekran) — geri dönmek için ekrana uzun basın. |
+
+### Alanı belirlemenin üç yolu, hepsi aynı anda kullanılabilir
+
+1. **Çiz** — boş alanda sürükleyerek yeni dikdörtgen çizin
+2. **Taşı / boyutlandır** — alanın içinde sürükleyip taşıyın; köşe tutamacını sürükleyip boyutlandırın
+3. **Sayısal** — X / Y / W / H değerlerini yüzde olarak girip *uygula*'ya basın
+
+Alan **otomatik kaydedilir** ve sonraki açılışta geri yüklenir.
+
+### Görüntü seçenekleri
+
+- **AMOLED modu** — tam siyah zemin (`#000000`); OLED panellerde göz ve pil dostu
+- **Tam ekran** — sistem çubukları gizli, immersive
+- **Desen** — ızgara, nokta veya hiçbiri (tek düğmeyle döner)
+- **Arka plan görseli** — herhangi bir görsel veya GIF karesi arka plan olarak yüklenebilir (yalnızca görsel amaçlı; girdiyi etkilemez)
 
 ### Area eşlemesi nasıl çalışır
 
-Cihaz üzerinde seçtiğiniz dikdörtgen, ekranın tamamına yayılır. Küçük bir alan
-seçmek, kalemi daha az hareket ettirerek tüm ekranı gezmenizi sağlar — yani daha
-yüksek etkin hassasiyet. osu! için genelde istenen budur.
+Seçtiğiniz dikdörtgen, PC ekranının tamamına yayılır. Küçük bir alan, kalemi daha
+az hareket ettirerek tüm ekranı gezmenizi sağlar — yani daha yüksek etkin
+hassasiyet. osu! için genelde istenen budur.
 
-`area.conf` düz metin dosyasıdır, elle de düzenlenebilir.
+Eşleme **cihaz üzerinde** uygulanır; daemon koordinatları olduğu gibi geçirir.
+
+## Linux area GUI (deneysel)
+
+`penlet-gui/`, Linux tarafı için Rust/egui ile yazılmış bir area editörüdür.
+**Deneyseldir** ve artık önerilen yol değildir — yukarıdaki uygulama içi editör
+onun yerini almıştır.
+
+Kullanmak için udev kuralı (daemon'ın yetkisiz çalışabilmesi) ve `SIGHUP` sinyali
+gerekir. Yine de denemek isterseniz:
+
+```sh
+./scripts/setup-permissions.sh   # udev kuralı, tek seferlik; çıkış/giriş yapın
+cd penlet-gui && cargo build --release
+./target/release/penlet-gui ../daemon/area.conf
+```
+
+> Hem uygulama alanı hem de `area.conf` varsayılan dışı değerlerdeyse eşlemeler
+> **üst üste biner.** Bilerek istemiyorsanız `area.conf`'u tam ekran varsayılanında
+> bırakın.
 
 ## Doğrulama
 
@@ -167,6 +224,8 @@ küçük bir alan, elinizi fazla hareket ettirmeden ince kontrol sağlar.
 | İmleç hareket etmiyor | Gerçek S Pen kullanın. Parmak ve kapasitif kalemler tasarım gereği yok sayılır. |
 | osu! tableti görmüyor | `verify.sh` çalıştırın; `tablet` yazmalı. Yazmıyorsa daemon'da `INPUT_PROP_POINTER`'ı kontrol edin. |
 | GUI "pid dosyası yok" diyor | Daemon çalışıyor olmalı — `area.conf.pid` dosyasını o oluşturur. |
+| GUI "daemon'a sinyal gönderilemedi" | Daemon root olarak çalışıyor. `./scripts/setup-permissions.sh` çalıştırın, çıkış/giriş yapın, sonra root'suz başlatın. |
+| `bind: Address already in use` | Zaten bir daemon çalışıyor: `pkill -f daemon/penlet` (sudo ile başlatıldıysa başına `sudo` ekleyin). |
 | `/dev/uinput` yok | `sudo modprobe uinput`. Kalıcı hale getirmek için `/etc/modules-load.d/uinput.conf`. |
 
 ## Yol haritası

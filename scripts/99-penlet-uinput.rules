@@ -1,0 +1,18 @@
+# penlet — /dev/uinput erisimi icin udev kurali
+#
+# Bu kural olmadan daemon'in root (sudo) ile calismasi gerekir; bu da
+# GUI'nin (normal kullanici) daemon'a SIGHUP gonderememesine yol acar.
+#
+# Kurulum:
+#   sudo cp scripts/99-penlet-uinput.rules /etc/udev/rules.d/
+#   sudo groupadd -f uinput
+#   sudo usermod -aG uinput "$USER"
+#   sudo udevadm control --reload-rules
+#   sudo udevadm trigger
+#   # sonra: cikis yapip tekrar giris yap (ya da 'newgrp uinput')
+#
+# Dogrulama:
+#   ls -l /dev/uinput        -> grup 'uinput', mod 'crw-rw----' olmali
+#   groups                   -> 'uinput' listede olmali
+
+KERNEL=="uinput", GROUP="uinput", MODE="0660", OPTIONS+="static_node=uinput"
