@@ -28,9 +28,9 @@ other platforms are out of scope.
 
 | Directory     | Role |
 |---------------|------|
-| `android/`    | penlet app — captures S Pen `MotionEvent` (touch + hover), sends 5-byte frames |
-| `daemon/`     | `penlet.c` — receives frames, creates a `uinput` absolute tablet, applies area mapping |
-| `penlet-gui/` | Rust/egui area editor — draw the area with your mouse, save, apply live |
+| `android/`    | penlet app — area editor + captures S Pen `MotionEvent` (touch + hover), sends 5-byte frames |
+| `daemon/`     | `penlet.c` — receives frames, creates a `uinput` absolute tablet (passthrough) |
+| `penlet-gui/` | *(experimental)* Rust/egui area editor for the Linux side — superseded by the in-app editor |
 | `scripts/`    | `run.sh` (start), `verify.sh` (is it recognized as a tablet?) |
 
 ## Protocol
@@ -83,7 +83,33 @@ chmod +x scripts/run.sh scripts/verify.sh android/gradlew
 > **This step is required.** Without it the scripts will not run.
 > Cloning from git preserves the executable bit, so this is only needed for archives.
 
-### 2. Build & install the Android app
+### 2. Set up permissions (optional — only for the experimental Linux GUI)
+
+```sh
+./scripts/setup-permissions.sh
+```
+
+**You can skip this.** It is only needed if you want the experimental Linux area
+GUI. It installs a udev rule granting access to `/dev/uinput`, letting the daemon
+run as your **normal user** instead of root.
+
+> **Why this matters:** if the daemon runs under `sudo`, the GUI (running as your
+> normal user) cannot send it `SIGHUP` — a normal user may not signal a root-owned
+> process. Live area reloading would silently fail. Running unprivileged is also
+> simply the safer default.
+
+**Log out and back in** afterwards (or run `newgrp uinput`) for the group change
+to take effect. Verify with:
+
+```sh
+groups              # should list 'uinput'
+ls -l /dev/uinput   # group: uinput, mode: crw-rw----
+```
+
+Without this step penlet still works, but `run.sh` falls back to `sudo` and the
+GUI's live reload is disabled.
+
+### 3. Build & install the Android app
 
 Open the `android/` directory in Android Studio and hit **Run**.
 USB debugging must be enabled on the device.
@@ -91,7 +117,7 @@ USB debugging must be enabled on the device.
 The manifest already declares the `INTERNET` permission — Android requires it
 even for loopback connections.
 
-### 3. Start the daemon
+### 4. Start the daemon
 
 ```sh
 ./scripts/run.sh
@@ -101,28 +127,59 @@ This loads `uinput`, sets up the `adb reverse` tunnel, builds the daemon if
 needed, and starts it. Then open the **penlet** app on your device — it should
 report a successful connection.
 
-## Tablet area (GUI)
+## Tablet area — configured in the app
 
-```sh
-cd penlet-gui
-cargo build --release
-./target/release/penlet-gui ../daemon/area.conf
-```
+Area selection lives **entirely in the Android app**. No permissions, no root,
+no signaling — you draw the area with your pen, right where your hand already is.
 
-- Drag inside the rectangle to define the active area
-- Quick presets: **Full screen** / **Center 60%**
-- **Keep aspect (4:3)** — enable if circles look squashed
-- **SAVE & APPLY** — writes `area.conf` and sends `SIGHUP` to the daemon
+The app has two modes, toggled with a single button:
 
-The daemon reloads its config **live**; you don't need to restart osu!.
+| Mode | Behaviour |
+|------|-----------|
+| **SETUP** | Adjust the area. Input is **not** sent to the PC. Both finger and pen work. |
+| **ACTIVE** | Area is locked. Only S Pen input **inside the area** is sent. Panel hides for a clean screen — long-press to return. |
+
+### Three ways to set the area, all available at once
+
+1. **Draw** — drag on empty space to draw a new rectangle
+2. **Move / resize** — drag inside the area to move it; drag a corner handle to resize
+3. **Numeric** — type X / Y / W / H as percentages and hit *apply*
+
+The area is **saved automatically** and restored on next launch.
+
+### Display options
+
+- **AMOLED mode** — true black background (`#000000`), easy on OLED panels and battery
+- **Fullscreen** — immersive, no system bars
+- **Pattern** — grid, dots, or none (cycles with one button)
+- **Background image** — load any image or GIF frame as a visual backdrop (purely cosmetic; it does not affect input)
 
 ### How area mapping works
 
-The rectangle you select on the device is stretched to fill the entire screen.
-A smaller area means you cover the whole screen with less pen movement — higher
-effective sensitivity, which is what you usually want for osu!.
+The rectangle you select is stretched to fill the entire PC screen. A smaller area
+means you cover the whole screen with less pen movement — higher effective
+sensitivity, which is usually what you want for osu!.
 
-`area.conf` is a plain text file and can be edited by hand.
+Mapping is applied **on the device**; the daemon simply passes the coordinates
+through.
+
+## Linux area GUI (experimental)
+
+`penlet-gui/` is a Rust/egui area editor for the Linux side. It is **experimental**
+and no longer the recommended path — the in-app editor above supersedes it.
+
+It requires a udev rule (so the daemon can run unprivileged) and `SIGHUP` signaling.
+If you want it anyway:
+
+```sh
+./scripts/setup-permissions.sh   # udev rule, one-time; log out and back in
+cd penlet-gui && cargo build --release
+./target/release/penlet-gui ../daemon/area.conf
+```
+
+> If both the app area and `area.conf` are set to non-default values, the mappings
+> compose (i.e. they stack). Keep `area.conf` at full-screen defaults unless you
+> know you want that.
 
 ## Verifying
 
@@ -167,6 +224,8 @@ placement; a small area gives you fine control without moving your hand much.
 | Cursor doesn't move | Use a real S Pen. Fingers and capacitive styluses are ignored by design. |
 | osu! doesn't see a tablet | Run `verify.sh`; it should report `tablet`. If not, check `INPUT_PROP_POINTER` in the daemon. |
 | GUI says "no pid file" | The daemon must be running — it creates `area.conf.pid`. |
+| GUI: "could not signal daemon" | The daemon is running as root. Run `./scripts/setup-permissions.sh`, log out/in, then start it unprivileged. |
+| `bind: Address already in use` | Another daemon is already running: `pkill -f daemon/penlet` (add `sudo` if it was started with sudo). |
 | `/dev/uinput` missing | `sudo modprobe uinput`. Persist with `/etc/modules-load.d/uinput.conf`. |
 
 ## Roadmap
