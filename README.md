@@ -2,7 +2,7 @@
 
 S Pen'li Android tabletini Linux'ta **mutlak konumlu grafik tableti** olarak
 kullanmani saglayan kopru. Ag yok — sadece USB + `adb reverse` + TCP loopback.
-Latency icin `TCP_NODELAY` acik. osu! ve cizim icin uygun.
+Latency icin `TCP_NODELAY` acik. osu! ve cizim CAD icin uygundur!
 
 ```
 [S Pen] -> penlet app (127.0.0.1:40118, TCP_NODELAY)
@@ -33,9 +33,10 @@ Basinc/tilt yok — osu! icin gereksiz, cikarmak latency dusurur.
 
 ## Kurulum
 
-### PC (Artix / Arch)
+### (Sadece Linux destekler Windows Desteği planlanmamıştır ve gelmeyecektir!). 
 ```sh
-sudo pacman -S android-tools libinput
+### Paket yöneticisinizden gerekli bu iki paketin kurun. 
+android-tools libinput
 cc -O2 -o daemon/penlet daemon/penlet.c
 ```
 
