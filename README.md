@@ -147,6 +147,13 @@ The app has two modes, toggled with a single button:
 
 The area is **saved automatically** and restored on next launch.
 
+### Language
+
+The app ships with **English** (default) and **Turkish** localisations, selected
+automatically from your Android system language. Strings live in
+`android/app/src/main/res/values/strings.xml` (English) and `values-tr/`
+(Turkish) — adding another language is just one more `values-<code>/strings.xml`.
+
 ### Display options
 
 - **AMOLED mode** — true black background (`#000000`), easy on OLED panels and battery

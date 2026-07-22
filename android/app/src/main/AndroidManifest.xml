@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.deku.penlet">
+
+    <!-- Loopback (127.0.0.1) baglantisi icin bile Android INTERNET izni ister -->
     <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:label="penlet"
+        android:label="@string/app_name"
         android:usesCleartextTraffic="true"
-        android:theme="@style/Theme.AppCompat.Light">
+        android:theme="@style/PenletTheme">
         <activity android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="landscape"
-            android:configChanges="orientation|screenSize|keyboardHidden">
+            android:configChanges="orientation|screenSize|keyboardHidden|uiMode">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

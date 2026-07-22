@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">penlet</string>
+
+    <!-- baglanti durumu -->
+    <string name="status_connecting">bağlanıyor…</string>
+    <string name="status_connected">BAĞLANDI — alan uygulamada ayarlanır</string>
+    <string name="status_disconnected">bağlantı yok — daemon\'ı başlatın ve \'adb reverse tcp:%1$d tcp:%1$d\' çalıştırın</string>
+
+    <!-- mod -->
+    <string name="mode_activate">AKTİF ET</string>
+    <string name="mode_back_to_setup">AYARA DÖN</string>
+    <string name="mode_active_hint">AKTİF — panel için ekrana uzun basın</string>
+
+    <!-- desen -->
+    <string name="pattern_label">desen: %1$s</string>
+    <string name="pattern_grid">ızgara</string>
+    <string name="pattern_dots">nokta</string>
+    <string name="pattern_none">yok</string>
+
+    <!-- amoled -->
+    <string name="amoled_on">AMOLED: açık</string>
+    <string name="amoled_off">AMOLED: kapalı</string>
+
+    <!-- butonlar -->
+    <string name="btn_image">görsel</string>
+    <string name="btn_apply">uygula</string>
+    <string name="btn_full">tam</string>
+
+    <!-- sayisal alanlar -->
+    <string name="field_x">X%</string>
+    <string name="field_y">Y%</string>
+    <string name="field_w">W%</string>
+    <string name="field_h">H%</string>
+
+    <!-- bildirimler -->
+    <string name="toast_image_failed">görsel yüklenemedi</string>
+</resources>

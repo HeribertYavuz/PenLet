@@ -147,6 +147,14 @@ Uygulamanın tek bir düğmeyle geçilen iki modu vardır:
 
 Alan **otomatik kaydedilir** ve sonraki açılışta geri yüklenir.
 
+### Dil
+
+Uygulama **İngilizce** (varsayılan) ve **Türkçe** dil desteğiyle gelir; Android
+sistem dilinize göre otomatik seçilir. Metinler
+`android/app/src/main/res/values/strings.xml` (İngilizce) ve `values-tr/`
+(Türkçe) dosyalarındadır — yeni bir dil eklemek için tek yapmanız gereken bir
+`values-<kod>/strings.xml` dosyası daha oluşturmaktır.
+
 ### Görüntü seçenekleri
 
 - **AMOLED modu** — tam siyah zemin (`#000000`); OLED panellerde göz ve pil dostu

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">penlet</string>
+
+    <!-- connection status -->
+    <string name="status_connecting">connecting…</string>
+    <string name="status_connected">CONNECTED — area is set in-app</string>
+    <string name="status_disconnected">no connection — start the daemon and run \'adb reverse tcp:%1$d tcp:%1$d\'</string>
+
+    <!-- mode -->
+    <string name="mode_activate">ACTIVATE</string>
+    <string name="mode_back_to_setup">BACK TO SETUP</string>
+    <string name="mode_active_hint">ACTIVE — long-press the screen for the panel</string>
+
+    <!-- pattern -->
+    <string name="pattern_label">pattern: %1$s</string>
+    <string name="pattern_grid">grid</string>
+    <string name="pattern_dots">dots</string>
+    <string name="pattern_none">none</string>
+
+    <!-- amoled -->
+    <string name="amoled_on">AMOLED: on</string>
+    <string name="amoled_off">AMOLED: off</string>
+
+    <!-- buttons -->
+    <string name="btn_image">image</string>
+    <string name="btn_apply">apply</string>
+    <string name="btn_full">full</string>
+
+    <!-- numeric fields -->
+    <string name="field_x">X%</string>
+    <string name="field_y">Y%</string>
+    <string name="field_w">W%</string>
+    <string name="field_h">H%</string>
+
+    <!-- toasts -->
+    <string name="toast_image_failed">could not load image</string>
+</resources>

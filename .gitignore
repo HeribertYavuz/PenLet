@@ -1,0 +1,34 @@
+# ============ daemon (C) ============
+# derlenen binary
+daemon/penlet
+daemon/*.o
+# calisma aninda uretilir (GUI SIGHUP icin)
+daemon/*.pid
+
+# Not: daemon/area.conf ornek/varsayilan olarak repoda durur.
+# Kendi kisisel ayarini commit etmek istemezsen su satiri ac:
+# daemon/area.conf
+
+# ============ penlet-gui (Rust) ============
+penlet-gui/target/
+**/*.rs.bk
+
+# ============ Android ============
+android/build/
+android/app/build/
+android/.gradle/
+# SDK yolu — makineye ozel, ASLA commit etme
+android/local.properties
+android/.cxx/
+*.apk
+*.aab
+*.iml
+
+# ============ IDE / editor ============
+.idea/
+.vscode/
+*.swp
+*~
+
+# ============ OS ============
+.DS_Store
